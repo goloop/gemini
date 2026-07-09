@@ -7,6 +7,7 @@
 package gemini_test
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"os"
@@ -16,7 +17,7 @@ import (
 	"github.com/goloop/gemini"
 )
 
-const integrationModel = gemini.ModelGemini25Flash
+var integrationModel = cmp.Or(os.Getenv("GEMINI_MODEL"), gemini.ModelGemini25Flash)
 
 func integrationClient(t *testing.T) *gemini.Client {
 	t.Helper()
