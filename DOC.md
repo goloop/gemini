@@ -195,3 +195,8 @@ if errors.As(err, &apiErr) && apiErr.Status == http.StatusTooManyRequests {
 
 Requests missing a model or messages fail before the network with
 `ai.ErrNoModel` or `ai.ErrNoMessages`.
+
+When Gemini blocks a prompt on safety grounds it returns HTTP 200 with no
+candidates and a block reason. The driver turns that into an `*ai.APIError`
+(status 400) whose message carries the block reason, so a blocked prompt is a
+normal error rather than a silent empty response.
