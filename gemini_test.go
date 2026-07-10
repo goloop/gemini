@@ -93,7 +93,8 @@ func TestGenerateToolUse(t *testing.T) {
 		t.Fatal(err)
 	}
 	calls := resp.ToolCalls()
-	if len(calls) != 1 || calls[0].Name != "get_weather" || calls[0].ID != "get_weather" {
+	// Gemini has no call IDs, so the driver synthesizes a unique one per call.
+	if len(calls) != 1 || calls[0].Name != "get_weather" || calls[0].ID != "get_weather-0" {
 		t.Fatalf("calls = %+v", calls)
 	}
 	if string(calls[0].Input) != `{"city":"Kyiv"}` {

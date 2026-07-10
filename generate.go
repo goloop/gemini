@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/goloop/ai"
@@ -23,7 +24,36 @@ func (c *Client) Generate(
 	if err != nil {
 		return nil, err
 	}
+	if err := blockedError(gr); err != nil {
+		return nil, err
+	}
 	return geminiToResponse(req.Model, gr, raw), nil
+}
+
+// blockedError returns an [ai.APIError] when a response carries no candidates
+// because the prompt was blocked by a safety filter. Such a response has HTTP
+// 200 with an empty candidate list, so without this check Generate would return
+// an empty result with no explanation.
+func blockedError(gr *GenerateResponse) error {
+	if len(gr.Candidates) > 0 || gr.PromptFeedback == nil ||
+		gr.PromptFeedback.BlockReason == "" {
+		return nil
+	}
+	return &ai.APIError{
+		Status:  http.StatusBadRequest,
+		Type:    "blocked",
+		Message: "prompt blocked: " + gr.PromptFeedback.BlockReason,
+	}
+}
+
+// toolCallID synthesizes a unique ID for a Gemini function call. Gemini does
+// not supply call IDs, so callers cannot otherwise tell apart two calls to the
+// same function in one turn. The per-name counter makes the ID unique; the
+// reverse lookup in geminiContents still resolves it back to the function name.
+func toolCallID(name string, seen map[string]int) string {
+	id := name + "-" + strconv.Itoa(seen[name])
+	seen[name]++
+	return id
 }
 
 // GenerateContent sends a native generateContent request for the given model.
@@ -229,11 +259,12 @@ func geminiToResponse(model string, gr *GenerateResponse, raw []byte) *ai.Respon
 	if len(gr.Candidates) > 0 {
 		cand := gr.Candidates[0]
 		resp.StopReason = cand.FinishReason
+		seen := map[string]int{}
 		for _, p := range cand.Content.Parts {
 			switch {
 			case p.FunctionCall != nil:
 				resp.Parts = append(resp.Parts, ai.ToolUse{
-					ID:    p.FunctionCall.Name,
+					ID:    toolCallID(p.FunctionCall.Name, seen),
 					Name:  p.FunctionCall.Name,
 					Input: p.FunctionCall.Args,
 				})

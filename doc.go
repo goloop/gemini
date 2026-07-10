@@ -13,7 +13,8 @@
 //	})
 //
 // Gemini keys tool results by function name rather than by call ID, so this
-// package uses the function name as the ai.ToolUse ID on the way out and
-// resolves it back on the way in. It depends only on goloop/ai and the standard
+// package synthesizes a unique ai.ToolUse ID per call (the function name plus a
+// counter, so repeated calls to one function stay distinct) and resolves it
+// back to the name on the way in. It depends only on goloop/ai and the standard
 // library.
 package gemini

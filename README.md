@@ -72,8 +72,8 @@ for chunk, err := range c.Stream(ctx, req) {
 
 Tools, images and system prompts use the same shared `ai` types as every other
 provider (see the [reference](DOC.md)). Gemini keys tool results by function
-name, so the driver uses the function name as the tool-call ID and resolves it
-back automatically.
+name, so the driver gives each call a unique ID (the function name plus a
+counter) and resolves it back to the name automatically.
 
 For Gemini-only options such as a JSON response schema, build a native
 `GenerateRequest`:

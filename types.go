@@ -97,9 +97,16 @@ type GenerationConfig struct {
 
 // GenerateResponse is the native generateContent (and stream chunk) response.
 type GenerateResponse struct {
-	Candidates    []Candidate    `json:"candidates"`
-	UsageMetadata *UsageMetadata `json:"usageMetadata,omitempty"`
-	ModelVersion  string         `json:"modelVersion,omitempty"`
+	Candidates     []Candidate     `json:"candidates"`
+	UsageMetadata  *UsageMetadata  `json:"usageMetadata,omitempty"`
+	ModelVersion   string          `json:"modelVersion,omitempty"`
+	PromptFeedback *PromptFeedback `json:"promptFeedback,omitempty"`
+}
+
+// PromptFeedback reports why a prompt was rejected. BlockReason is empty for a
+// prompt that was not blocked (for example "SAFETY" or "PROHIBITED_CONTENT").
+type PromptFeedback struct {
+	BlockReason string `json:"blockReason,omitempty"`
 }
 
 // Candidate is one generated response option.

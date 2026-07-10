@@ -36,6 +36,7 @@ func (c *Client) Stream(
 		defer resp.Body.Close()
 
 		var usage *ai.Usage
+		seen := map[string]int{}
 		for data, err := range ai.SSEEvents(resp.Body) {
 			if err != nil {
 				yield(ai.Chunk{}, err)
@@ -51,6 +52,10 @@ func (c *Client) Stream(
 					OutputTokens: gr.UsageMetadata.CandidatesTokenCount,
 				}
 			}
+			if err := blockedError(&gr); err != nil {
+				yield(ai.Chunk{}, err)
+				return
+			}
 			if len(gr.Candidates) == 0 {
 				continue
 			}
@@ -59,7 +64,7 @@ func (c *Client) Stream(
 				switch {
 				case p.FunctionCall != nil:
 					chunk.ToolCall = &ai.ToolUse{
-						ID:    p.FunctionCall.Name,
+						ID:    toolCallID(p.FunctionCall.Name, seen),
 						Name:  p.FunctionCall.Name,
 						Input: p.FunctionCall.Args,
 					}
