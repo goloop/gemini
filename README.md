@@ -19,7 +19,7 @@ top.
 - Retries on 429 and 5xx with backoff; normalized, typed API errors.
 - Depends only on `github.com/goloop/ai` and the standard library.
 - Structured output: `ai.Format` maps onto `responseMimeType` and
-  `responseSchema`; read the reply with `resp.JSON(&v)`.
+  `responseJsonSchema`; read the reply with `resp.JSON(&v)`.
 
 ## Installation
 

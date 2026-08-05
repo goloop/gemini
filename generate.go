@@ -249,19 +249,24 @@ func geminiGenConfig(req *ai.Request) *GenerationConfig {
 	}
 
 	// This provider asks for structured output through the response's MIME
-	// type, with the schema beside it rather than inside it.
+	// type, with the schema beside it rather than inside it. Of the two schema
+	// fields it offers, the JSON Schema one is the one ai.Format.Schema fits:
+	// responseSchema takes an OpenAPI 3.0 subset, which agrees with JSON
+	// Schema only for the simplest shapes and quietly stops agreeing at
+	// $ref, oneOf or additionalProperties.
 	if f := req.Format; f != nil {
 		switch f.Type {
 		case ai.FormatJSON:
 			g.ResponseMIMEType = jsonMIME
 		case ai.FormatJSONSchema:
 			g.ResponseMIMEType = jsonMIME
-			g.ResponseSchema = f.Schema
+			g.ResponseJSONSchema = f.Schema
 		}
 	}
 
 	if g.Temperature == nil && g.TopP == nil && g.MaxOutputTokens == 0 &&
-		len(g.StopSequences) == 0 && g.ResponseMIMEType == "" {
+		len(g.StopSequences) == 0 && g.ResponseMIMEType == "" &&
+		len(g.ResponseSchema) == 0 && len(g.ResponseJSONSchema) == 0 {
 		return nil
 	}
 	return g

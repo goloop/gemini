@@ -87,12 +87,23 @@ type FunctionCallingConfig struct {
 // GenerationConfig tunes generation. Temperature and TopP are pointers so an
 // explicit zero is distinct from unset.
 type GenerationConfig struct {
-	Temperature      *float64        `json:"temperature,omitempty"`
-	TopP             *float64        `json:"topP,omitempty"`
-	MaxOutputTokens  int             `json:"maxOutputTokens,omitempty"`
-	StopSequences    []string        `json:"stopSequences,omitempty"`
-	ResponseMIMEType string          `json:"responseMimeType,omitempty"`
-	ResponseSchema   json.RawMessage `json:"responseSchema,omitempty"`
+	Temperature      *float64 `json:"temperature,omitempty"`
+	TopP             *float64 `json:"topP,omitempty"`
+	MaxOutputTokens  int      `json:"maxOutputTokens,omitempty"`
+	StopSequences    []string `json:"stopSequences,omitempty"`
+	ResponseMIMEType string   `json:"responseMimeType,omitempty"`
+
+	// ResponseSchema constrains the answer to a schema written in the
+	// OpenAPI 3.0 subset the API defines. It is not JSON Schema, and the two
+	// diverge as soon as a schema uses anything beyond type, properties and
+	// required.
+	ResponseSchema json.RawMessage `json:"responseSchema,omitempty"`
+
+	// ResponseJSONSchema constrains the answer to a JSON Schema. It is what
+	// ai.Format.Schema is, so that is where this driver puts it. The API
+	// rejects a request that sets both this and ResponseSchema; either one
+	// still needs ResponseMIMEType.
+	ResponseJSONSchema json.RawMessage `json:"responseJsonSchema,omitempty"`
 }
 
 // GenerateResponse is the native generateContent (and stream chunk) response.

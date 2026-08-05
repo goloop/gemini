@@ -2,6 +2,7 @@ package gemini
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/goloop/ai"
@@ -53,14 +54,63 @@ func TestResponseFormat(t *testing.T) {
 				if cfg.ResponseMIMEType != c.mime {
 					t.Errorf("responseMimeType = %q, want %q", cfg.ResponseMIMEType, c.mime)
 				}
-				if string(cfg.ResponseSchema) != c.schema {
-					t.Errorf("responseSchema = %s, want %s", cfg.ResponseSchema, c.schema)
+				if string(cfg.ResponseJSONSchema) != c.schema {
+					t.Errorf("responseJsonSchema = %s, want %s",
+						cfg.ResponseJSONSchema, c.schema)
+				}
+				// The two schema fields are mutually exclusive, and only one
+				// of them takes what ai.Format.Schema actually is.
+				if len(cfg.ResponseSchema) != 0 {
+					t.Errorf("responseSchema = %s; a JSON Schema does not go "+
+						"in the OpenAPI field", cfg.ResponseSchema)
 				}
 			}
 			if got := formatMode(c.format); got != c.mode {
 				t.Errorf("formatMode = %s, want %s", got, c.mode)
 			}
 		})
+	}
+}
+
+// TestJSONSchemaFeaturesSurvive covers why the field matters. responseSchema
+// takes an OpenAPI 3.0 subset; a schema using JSON Schema's own vocabulary
+// has to reach the API whole, through the field that speaks it.
+func TestJSONSchemaFeaturesSurvive(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object","additionalProperties":false,` +
+		`"properties":{"a":{"oneOf":[{"type":"string"},{"type":"null"}]}},` +
+		`"$defs":{"x":{"type":"integer"}}}`)
+
+	cfg := geminiRequest(askFor(&ai.Format{
+		Type:   ai.FormatJSONSchema,
+		Schema: schema,
+	})).GenerationConfig
+	if cfg == nil {
+		t.Fatal("no generationConfig was sent")
+	}
+	if string(cfg.ResponseJSONSchema) != string(schema) {
+		t.Errorf("schema was not sent verbatim:\n got %s\nwant %s",
+			cfg.ResponseJSONSchema, schema)
+	}
+}
+
+// TestNativeSchemaFieldStillWorks checks the OpenAPI field is still there for
+// callers who build a GenerateRequest themselves and mean that dialect.
+func TestNativeSchemaFieldStillWorks(t *testing.T) {
+	gr := &GenerateRequest{
+		GenerationConfig: &GenerationConfig{
+			ResponseMIMEType: "application/json",
+			ResponseSchema:   json.RawMessage(`{"type":"object"}`),
+		},
+	}
+	body, err := json.Marshal(gr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), `"responseSchema"`) {
+		t.Errorf("responseSchema was dropped: %s", body)
+	}
+	if strings.Contains(string(body), `"responseJsonSchema"`) {
+		t.Errorf("responseJsonSchema appeared unasked: %s", body)
 	}
 }
 

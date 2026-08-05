@@ -96,7 +96,15 @@ err = resp.JSON(&seo)
 ```
 
 `ai.FormatJSON` виставляє `responseMimeType` у `application/json`;
-`ai.FormatJSONSchema` кладе схему поруч, у `responseSchema`.
+`ai.FormatJSONSchema` кладе схему поруч, у `responseJsonSchema`.
+
+API має **два** поля для схеми, і вони взаємовиключні. `responseSchema` приймає
+підмножину **OpenAPI 3.0**, яка збігається з JSON Schema лише для найпростіших
+форм - `$ref`, `oneOf`, `$defs` і `additionalProperties` це те, де вони
+розходяться. `ai.Format.Schema` - це JSON Schema, тож драйвер бере
+`responseJsonSchema`, поле, що говорить цим діалектом.
+`GenerationConfig.ResponseSchema` лишається для тих, хто будує `GenerateRequest`
+власноруч і має на увазі саме OpenAPI.
 
 
 `ai.Response.Format` дорівнює `ai.FormatNative`: цей провайдер дотримує кожну

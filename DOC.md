@@ -97,7 +97,15 @@ err = resp.JSON(&seo)
 ```
 
 `ai.FormatJSON` sets `responseMimeType` to `application/json`;
-`ai.FormatJSONSchema` sends the schema as `responseSchema` beside it.
+`ai.FormatJSONSchema` sends the schema as `responseJsonSchema` beside it.
+
+The API offers two schema fields and they are mutually exclusive.
+`responseSchema` takes a subset of **OpenAPI 3.0**, which agrees with JSON
+Schema only for the simplest shapes - `$ref`, `oneOf`, `$defs` and
+`additionalProperties` are where the two part ways. `ai.Format.Schema` is a
+JSON Schema, so the driver uses `responseJsonSchema`, the field that speaks
+that dialect. `GenerationConfig.ResponseSchema` remains available for callers
+who build a `GenerateRequest` themselves and mean OpenAPI.
 
 
 `ai.Response.Format` is `ai.FormatNative`: this provider enforces every shape

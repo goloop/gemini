@@ -15,8 +15,11 @@
 // # Structured output
 //
 // ai.Request.Format maps onto responseMimeType, with ai.FormatJSONSchema
-// sending the schema as responseSchema beside it, so a request for JSON is
+// sending the schema as responseJsonSchema beside it, so a request for JSON is
 // enforced rather than merely asked for. ai.Response.JSON decodes the reply.
+// The API has a second schema field, responseSchema, which takes an OpenAPI
+// 3.0 subset rather than JSON Schema; it stays available on GenerationConfig
+// for callers who mean that dialect.
 //
 // Gemini keys tool results by function name rather than by call ID, so this
 // package synthesizes a unique ai.ToolUse ID per call (the function name plus a

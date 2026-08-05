@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-05
+
+### Added
+- `GenerationConfig.ResponseJSONSchema`, the API's `responseJsonSchema` field,
+  which takes a JSON Schema. The existing `ResponseSchema` takes a subset of
+  OpenAPI 3.0; the two are mutually exclusive.
+
+### Fixed
+- `ai.FormatJSONSchema` now sends the schema as `responseJsonSchema` rather
+  than `responseSchema`. `ai.Format.Schema` is a JSON Schema, and the field it
+  was going into speaks OpenAPI 3.0 - the dialects agree for a schema of plain
+  types, properties and required fields, which is why this worked, and stop
+  agreeing at `$ref`, `oneOf`, `$defs` and `additionalProperties`. A schema
+  using any of those was rejected or read as something else.
+
 ## [0.2.2] - 2026-08-05
 
 ### Documentation
