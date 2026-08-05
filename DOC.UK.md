@@ -11,6 +11,7 @@
 - [Ментальна модель](#ментальна-модель)
 - [Створення клієнта](#створення-клієнта)
 - [Generate і Stream](#generate-і-stream)
+- [Структурований вивід](#структурований-вивід)
 - [Нативний generateContent](#нативний-generatecontent)
 - [Інструменти та результати](#інструменти-та-результати)
 - [Зображення й system-промпти](#зображення-й-system-промпти)
@@ -73,6 +74,34 @@ for chunk, err := range c.Stream(ctx, req) {
 	fmt.Print(chunk.Text)
 }
 ```
+
+## Структурований вивід
+
+`ai.Request.Format` лягає на власний `responseMimeType` провайдера, тож запит на JSON
+провайдер **дотримує**, а не просто «чує»:
+
+```go
+resp, err := c.Generate(ctx, &ai.Request{
+	Model:    "the-model",
+	Messages: []ai.Message{ai.UserText("Склади SEO-поля для цієї статті.")},
+	Format: &ai.Format{
+		Type:   ai.FormatJSONSchema,
+		Name:   "seo",
+		Schema: schema,
+	},
+})
+
+var seo SEO
+err = resp.JSON(&seo)
+```
+
+`ai.FormatJSON` виставляє `responseMimeType` у `application/json`;
+`ai.FormatJSONSchema` кладе схему поруч, у `responseSchema`.
+
+
+`ai.Response.Format` дорівнює `ai.FormatNative`: цей провайдер дотримує кожну
+форму, яку приймає. Які моделі підтримують схемний режим - справа провайдера;
+таблиці можливостей тут немає, тож про непідтримувану пару скаже він сам.
 
 ## Нативний generateContent
 

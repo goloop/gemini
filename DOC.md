@@ -11,6 +11,7 @@ Ukrainian version: **[DOC.UK.md](DOC.UK.md)**.
 - [Mental model](#mental-model)
 - [Creating a client](#creating-a-client)
 - [Generate and Stream](#generate-and-stream)
+- [Structured output](#structured-output)
 - [Native generateContent](#native-generatecontent)
 - [Tools and tool results](#tools-and-tool-results)
 - [Images and system prompts](#images-and-system-prompts)
@@ -74,6 +75,35 @@ for chunk, err := range c.Stream(ctx, req) {
 	fmt.Print(chunk.Text)
 }
 ```
+
+## Structured output
+
+`ai.Request.Format` maps onto the provider's own `responseMimeType`, so a request for JSON
+is enforced by the provider rather than merely asked for:
+
+```go
+resp, err := c.Generate(ctx, &ai.Request{
+	Model:    "the-model",
+	Messages: []ai.Message{ai.UserText("Draft SEO fields for this article.")},
+	Format: &ai.Format{
+		Type:   ai.FormatJSONSchema,
+		Name:   "seo",
+		Schema: schema,
+	},
+})
+
+var seo SEO
+err = resp.JSON(&seo)
+```
+
+`ai.FormatJSON` sets `responseMimeType` to `application/json`;
+`ai.FormatJSONSchema` sends the schema as `responseSchema` beside it.
+
+
+`ai.Response.Format` is `ai.FormatNative`: this provider enforces every shape
+it accepts. Which models support schema mode is the provider's business - there
+is no capability table here, so an unsupported pairing is reported by the
+provider itself.
 
 ## Native generateContent
 

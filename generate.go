@@ -27,7 +27,9 @@ func (c *Client) Generate(
 	if err := blockedError(gr); err != nil {
 		return nil, err
 	}
-	return geminiToResponse(req.Model, gr, raw), nil
+	resp := geminiToResponse(req.Model, gr, raw)
+	resp.Format = formatMode(req.Format)
+	return resp, nil
 }
 
 // blockedError returns an [ai.APIError] when a response carries no candidates
@@ -245,11 +247,36 @@ func geminiGenConfig(req *ai.Request) *GenerationConfig {
 	if req.MaxTokens > 0 {
 		g.MaxOutputTokens = req.MaxTokens
 	}
-	if g.Temperature == nil && g.TopP == nil &&
-		g.MaxOutputTokens == 0 && len(g.StopSequences) == 0 {
+
+	// This provider asks for structured output through the response's MIME
+	// type, with the schema beside it rather than inside it.
+	if f := req.Format; f != nil {
+		switch f.Type {
+		case ai.FormatJSON:
+			g.ResponseMIMEType = jsonMIME
+		case ai.FormatJSONSchema:
+			g.ResponseMIMEType = jsonMIME
+			g.ResponseSchema = f.Schema
+		}
+	}
+
+	if g.Temperature == nil && g.TopP == nil && g.MaxOutputTokens == 0 &&
+		len(g.StopSequences) == 0 && g.ResponseMIMEType == "" {
 		return nil
 	}
 	return g
+}
+
+// jsonMIME is what this provider wants told when the answer must be JSON.
+const jsonMIME = "application/json"
+
+// formatMode reports how the request's format was satisfied. Both shapes this
+// driver accepts are enforced by the provider itself.
+func formatMode(f *ai.Format) ai.FormatMode {
+	if f == nil || f.Type == ai.FormatText {
+		return ai.FormatNone
+	}
+	return ai.FormatNative
 }
 
 // geminiToResponse maps a native response onto an ai.Response. Function calls
