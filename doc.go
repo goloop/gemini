@@ -12,6 +12,12 @@
 //	    Messages: []ai.Message{ai.UserText("Say hello in one word.")},
 //	})
 //
+// # Structured output
+//
+// ai.Request.Format maps onto responseMimeType, with ai.FormatJSONSchema
+// sending the schema as responseSchema beside it, so a request for JSON is
+// enforced rather than merely asked for. ai.Response.JSON decodes the reply.
+//
 // Gemini keys tool results by function name rather than by call ID, so this
 // package synthesizes a unique ai.ToolUse ID per call (the function name plus a
 // counter, so repeated calls to one function stay distinct) and resolves it
