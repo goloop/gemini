@@ -13,6 +13,7 @@ Ukrainian version: **[DOC.UK.md](DOC.UK.md)**.
 - [Generate and Stream](#generate-and-stream)
 - [Structured output](#structured-output)
 - [Hosted web search](#hosted-web-search)
+- [Capabilities and model-level refusals](#capabilities-and-model-level-refusals)
 - [Native generateContent](#native-generatecontent)
 - [Tools and tool results](#tools-and-tool-results)
 - [Images and system prompts](#images-and-system-prompts)
@@ -259,6 +260,29 @@ provider enforces a format by constraining what the model may emit, and that
 does not hold together with grounding. The pair is `ai.ErrFormatWithHosted`
 before the request leaves. Two calls do work: one that searches and answers in
 prose, one without `Hosted` that reshapes it into the schema.
+
+## Capabilities and model-level refusals
+
+This driver implements `ai.Capable`. `ai.CapabilitiesOf(c)` reports what it
+runs and which settings it accepts, and `ai.SupportsHosted` answers before a
+call whether a request as written is known to work - the decision behind
+showing a search control at all, and behind one request or two.
+
+Reported here: web search with no settings at all - the provider decides how
+many searches to run and over what - and `WithFormat` deliberately empty: the
+constraint that enforces a schema does not hold together with grounding, so a
+feature that needs both takes two calls (`ai.ErrFormatWithHosted` says so at
+run time).
+
+It is a hint, not a permission: support also depends on the model, the account
+and the region, so `ai.ErrNoHosted` and `ai.ErrNoFormat` remain the source of
+truth. What changed alongside is that a refusal the provider reports only as a
+400 - "this model cannot do that" - now arrives wrapped in those same
+sentinels, so one `errors.Is` covers a limitation the driver knew in advance
+and one it learned over the wire. The provider's own `ai.APIError` stays
+reachable with `errors.As`. The wrapping is deliberately narrow: only a 400,
+only a capability the request actually asked for, only an error naming that
+exact feature.
 
 ## Options and errors
 
