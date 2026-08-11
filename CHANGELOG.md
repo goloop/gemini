@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-08-11
+
+First stable release, on `ai` v1.0.0.
+
+### Added
+- `ai.Request.Hosted` maps onto grounding with Google Search, sent as its own
+  entry of the tools list beside the caller's function declarations.
+- Sources come back as `ai.Citation` values on the text they support. This
+  provider is unusual in reporting where: its offsets are byte offsets, so
+  `StartByte` and `EndByte` cut `ai.Text.Text` exactly and a caller can show
+  which sentence each source backs. A range that does not fall inside its part
+  is dropped rather than reported wrong.
+- `ai.Response.Hosted` reports whether grounding ran and how many queries it
+  issued, which is the unit this provider meters.
+- A stream carries the sources once each, without a range: the provider
+  measures a range against the finished answer, and a stream has none yet.
+- `GroundingMetadata` and the types under it are exposed on `Candidate`.
+
+### Changed
+- Grounding takes no settings here, so a request that sets
+  `ai.HostedWeb.MaxUses`, either domain list or a region is `ai.ErrNoHosted`
+  rather than a search that quietly ignores what it was told.
+- A search and a structured `ai.Format` cannot be asked for in one call: this
+  provider enforces a format by constraining what the model may emit, and that
+  does not hold together with grounding. The pair is `ai.ErrFormatWithHosted`
+  before the request leaves, rather than JSON that quietly does not match.
+
 ## [0.3.0] - 2026-08-05
 
 ### Added

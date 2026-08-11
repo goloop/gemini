@@ -9,7 +9,6 @@ AI provider, and exposes Gemini's native endpoints with their full options on
 top.
 
 ## Features
-
 - Content generation: `Generate` for a single response, `Stream` for
   token-by-token output through `iter.Seq2`.
 - Tool use (function calling), multimodal image input and system instructions.
@@ -20,6 +19,9 @@ top.
 - Depends only on `github.com/goloop/ai` and the standard library.
 - Structured output: `ai.Format` maps onto `responseMimeType` and
   `responseJsonSchema`; read the reply with `resp.JSON(&v)`.
+- Hosted web search: `ai.Request.Hosted` maps onto grounding with Google
+  Search, with byte-accurate citation ranges and a report of whether it
+  actually ran.
 
 ## Installation
 

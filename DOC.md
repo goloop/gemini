@@ -12,6 +12,7 @@ Ukrainian version: **[DOC.UK.md](DOC.UK.md)**.
 - [Creating a client](#creating-a-client)
 - [Generate and Stream](#generate-and-stream)
 - [Structured output](#structured-output)
+- [Hosted web search](#hosted-web-search)
 - [Native generateContent](#native-generatecontent)
 - [Tools and tool results](#tools-and-tool-results)
 - [Images and system prompts](#images-and-system-prompts)
@@ -215,6 +216,49 @@ models, err := c.Models(ctx)
 m, err := c.GetModel(ctx, gemini.ModelGemini25Flash)
 m.InputTokenLimit
 ```
+
+## Hosted web search
+
+`ai.Request.Hosted` maps onto grounding with Google Search, sent as its own
+entry of the tools list beside your function declarations:
+
+```go
+resp, err := c.Generate(ctx, &ai.Request{
+	Model:    gemini.ModelGemini25Flash,
+	Messages: []ai.Message{ai.UserText("What shipped this week?")},
+	Hosted:   []ai.Hosted{{Kind: ai.HostedWebSearch}},
+})
+for _, s := range resp.Citations() {
+	fmt.Println(s.URL, resp.Text()[s.StartByte:s.EndByte])
+}
+```
+
+The search runs on the provider's side, so nothing new reaches a tool loop.
+
+Sources arrive as `ai.Citation` values on the text they support, and this
+provider is unusual in reporting *where*: its offsets are byte offsets, so
+`StartByte` and `EndByte` cut `ai.Text.Text` exactly and you can show which
+sentence each source backs. It never reports the source's own words, so
+`CitedText` stays empty here. A range that does not fall inside its part is
+dropped rather than reported wrong.
+
+A stream is the exception: it carries the sources without a range, because the
+provider measures a range against the finished answer and a stream has none
+yet.
+
+`ai.Response.Hosted` reports whether grounding ran and how many queries it
+issued, which is the unit this provider meters.
+
+Grounding takes no settings at all here - the provider decides how many
+searches to run and over what - so a request that sets `ai.HostedWeb.MaxUses`,
+either domain list or a region is `ai.ErrNoHosted` rather than a search that
+quietly ignores it.
+
+A search and a structured `ai.Format` cannot be asked for in one call: this
+provider enforces a format by constraining what the model may emit, and that
+does not hold together with grounding. The pair is `ai.ErrFormatWithHosted`
+before the request leaves. Two calls do work: one that searches and answers in
+prose, one without `Hosted` that reshapes it into the schema.
 
 ## Options and errors
 
