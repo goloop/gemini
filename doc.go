@@ -56,6 +56,20 @@
 // searches and answers in prose, one without Hosted that reshapes it into the
 // schema.
 //
+// # Asking what this driver can do
+//
+// Capabilities describes this driver for the decision taken before a call:
+// whether to offer a feature at all, and whether it needs one request or two.
+//
+//	if ai.SupportsHosted(c, ai.Hosted{Kind: ai.HostedWebSearch}) { ... }
+//
+// It is a hint and not a permission - support also depends on the model, the
+// account and the region - so ai.ErrNoHosted and ai.ErrNoFormat remain the
+// source of truth and a caller still handles them. What changes is that a
+// refusal the provider only reports as a 400 now arrives as those same
+// sentinels, wrapped around the original ai.APIError, so one errors.Is covers
+// a limitation this driver knew in advance and one it learned over the wire.
+//
 // Gemini keys tool results by function name rather than by call ID, so this
 // package synthesizes a unique ai.ToolUse ID per call (the function name plus a
 // counter, so repeated calls to one function stay distinct) and resolves it

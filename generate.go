@@ -26,7 +26,7 @@ func (c *Client) Generate(
 	}
 	gr, raw, err := c.generateContent(ctx, req.Model, greq)
 	if err != nil {
-		return nil, err
+		return nil, wrapUnsupportedCapability(req, err)
 	}
 	if err := blockedError(gr); err != nil {
 		return nil, err
