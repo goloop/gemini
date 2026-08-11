@@ -21,6 +21,41 @@
 // 3.0 subset rather than JSON Schema; it stays available on GenerationConfig
 // for callers who mean that dialect.
 //
+// # Hosted web search
+//
+// ai.Request.Hosted maps onto grounding with Google Search, which goes in the
+// tools list as an entry of its own beside the caller's functions:
+//
+//	resp, err := c.Generate(ctx, &ai.Request{
+//	    Model:    gemini.ModelGemini25Flash,
+//	    Messages: []ai.Message{ai.UserText("What shipped this week?")},
+//	    Hosted:   []ai.Hosted{{Kind: ai.HostedWebSearch}},
+//	})
+//	for _, c := range resp.Citations() { ... }
+//
+// The search runs on the provider's side, so nothing new reaches a tool loop.
+// The sources come back as ai.Citation values on the text they support, and
+// this provider is unusual in reporting where: its offsets are byte offsets,
+// so Citation.StartByte and Citation.EndByte cut ai.Text.Text exactly, and a
+// caller can show which sentence each source backs. It never reports the
+// source's own words, so Citation.CitedText stays empty here.
+//
+// A stream is the exception: it carries the sources without a range. The
+// provider measures a range against the finished answer, and there is no
+// finished answer to measure against while it is still arriving.
+//
+// Grounding takes no settings at all here: the provider decides how many
+// searches to run and over what. A request that sets ai.HostedWeb.MaxUses,
+// either domain list or a region is ai.ErrNoHosted rather than a search that
+// quietly ignores what it was told.
+//
+// A search and a structured Format cannot be asked for in the same call. This
+// provider enforces a format by constraining what the model may emit, and that
+// does not hold together with grounding, so a request that asks for both is
+// ai.ErrFormatWithHosted before it leaves. Two calls do work: one that
+// searches and answers in prose, one without Hosted that reshapes it into the
+// schema.
+//
 // Gemini keys tool results by function name rather than by call ID, so this
 // package synthesizes a unique ai.ToolUse ID per call (the function name plus a
 // counter, so repeated calls to one function stay distinct) and resolves it

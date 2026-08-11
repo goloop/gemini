@@ -61,10 +61,21 @@ type GenerateRequest struct {
 	GenerationConfig  *GenerationConfig `json:"generationConfig,omitempty"`
 }
 
-// ToolDecls groups the function declarations offered to the model.
+// ToolDecls is one entry of the tools list: either the caller's function
+// declarations or one of the provider's own tools. A request that wants both
+// sends two entries.
 type ToolDecls struct {
 	FunctionDeclarations []FunctionDeclaration `json:"functionDeclarations,omitempty"`
+
+	// GoogleSearch turns on grounding with Google Search, which the provider
+	// runs itself. It takes no settings, which is why it is an empty object.
+	GoogleSearch *GoogleSearch `json:"googleSearch,omitempty"`
 }
+
+// GoogleSearch asks the provider to ground its answer in a search it runs
+// itself. It has no fields: this provider decides how many searches to run and
+// over what, and offers nothing to narrow them with.
+type GoogleSearch struct{}
 
 // FunctionDeclaration describes a callable function. Parameters is a JSON
 // Schema object describing its arguments.
@@ -125,6 +136,49 @@ type Candidate struct {
 	Content      Content `json:"content"`
 	FinishReason string  `json:"finishReason,omitempty"`
 	Index        int     `json:"index"`
+
+	// GroundingMetadata is present when the answer was grounded in a search
+	// the provider ran. It is where the sources live.
+	GroundingMetadata *GroundingMetadata `json:"groundingMetadata,omitempty"`
+}
+
+// GroundingMetadata reports the search behind a grounded answer: what was
+// searched for, what was found, and which stretch of the answer each finding
+// supports.
+type GroundingMetadata struct {
+	WebSearchQueries  []string           `json:"webSearchQueries,omitempty"`
+	GroundingChunks   []GroundingChunk   `json:"groundingChunks,omitempty"`
+	GroundingSupports []GroundingSupport `json:"groundingSupports,omitempty"`
+}
+
+// GroundingChunk is one source the search found.
+type GroundingChunk struct {
+	Web *GroundingWeb `json:"web,omitempty"`
+}
+
+// GroundingWeb is a web page a search found.
+type GroundingWeb struct {
+	URI    string `json:"uri,omitempty"`
+	Title  string `json:"title,omitempty"`
+	Domain string `json:"domain,omitempty"`
+}
+
+// GroundingSupport ties a stretch of the answer to the sources behind it.
+// Sources are named by their position in GroundingMetadata.GroundingChunks.
+type GroundingSupport struct {
+	Segment               *Segment `json:"segment,omitempty"`
+	GroundingChunkIndices []int    `json:"groundingChunkIndices,omitempty"`
+}
+
+// Segment is a stretch of the generated answer. StartIndex and EndIndex are
+// byte offsets, which is what [ai.Citation] wants, so unlike most providers
+// this one can say which sentence a source backs rather than only listing
+// sources.
+type Segment struct {
+	PartIndex  int    `json:"partIndex,omitempty"`
+	StartIndex int    `json:"startIndex,omitempty"`
+	EndIndex   int    `json:"endIndex,omitempty"`
+	Text       string `json:"text,omitempty"`
 }
 
 // UsageMetadata reports token counts for a request.

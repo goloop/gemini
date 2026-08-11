@@ -20,7 +20,11 @@ func (c *Client) Generate(
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
-	gr, raw, err := c.generateContent(ctx, req.Model, geminiRequest(req))
+	greq, err := geminiRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	gr, raw, err := c.generateContent(ctx, req.Model, greq)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +33,18 @@ func (c *Client) Generate(
 	}
 	resp := geminiToResponse(req.Model, gr, raw)
 	resp.Format = formatMode(req.Format)
+	if resp.Hosted, err = req.HostedReports(responseCalls(gr)); err != nil {
+		return nil, err
+	}
 	return resp, nil
+}
+
+// responseCalls reports how many searches the answer's candidate came from.
+func responseCalls(gr *GenerateResponse) map[ai.HostedKind]int {
+	if len(gr.Candidates) == 0 {
+		return nil
+	}
+	return hostedCalls(gr.Candidates[0].GroundingMetadata)
 }
 
 // blockedError returns an [ai.APIError] when a response carries no candidates
@@ -94,14 +109,21 @@ func (c *Client) generateContent(
 }
 
 // geminiRequest maps an ai.Request onto a native GenerateRequest.
-func geminiRequest(req *ai.Request) *GenerateRequest {
+func geminiRequest(req *ai.Request) (*GenerateRequest, error) {
+	if err := checkFormat(req); err != nil {
+		return nil, err
+	}
+	tools, err := hostedTools(req)
+	if err != nil {
+		return nil, err
+	}
 	return &GenerateRequest{
 		Contents:          geminiContents(req),
 		SystemInstruction: geminiSystem(req),
-		Tools:             geminiTools(req),
+		Tools:             append(geminiTools(req), tools...),
 		ToolConfig:        geminiToolConfig(req),
 		GenerationConfig:  geminiGenConfig(req),
-	}
+	}, nil
 }
 
 // geminiContents maps conversation messages to Gemini contents. System
@@ -292,6 +314,11 @@ func geminiToResponse(model string, gr *GenerateResponse, raw []byte) *ai.Respon
 		cand := gr.Candidates[0]
 		resp.StopReason = cand.FinishReason
 		seen := map[string]int{}
+
+		// The grounding offsets are measured against the candidate's text as
+		// a whole, so the running offset is what rebases them onto the part
+		// they fall in.
+		textIndex, startByte := 0, 0
 		for _, p := range cand.Content.Parts {
 			switch {
 			case p.FunctionCall != nil:
@@ -301,7 +328,13 @@ func geminiToResponse(model string, gr *GenerateResponse, raw []byte) *ai.Respon
 					Input: p.FunctionCall.Args,
 				})
 			case p.Text != "":
-				resp.Parts = append(resp.Parts, ai.Text{Text: p.Text})
+				resp.Parts = append(resp.Parts, ai.Text{
+					Text: p.Text,
+					Citations: citationsFor(cand.GroundingMetadata,
+						textIndex, startByte, len(p.Text)),
+				})
+				startByte += len(p.Text)
+				textIndex++
 			}
 		}
 	}

@@ -40,7 +40,7 @@ func TestResponseFormat(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			gr := geminiRequest(askFor(c.format))
+			gr := mustGeminiRequest(t, askFor(c.format))
 			cfg := gr.GenerationConfig
 
 			if c.mime == "" {
@@ -80,7 +80,7 @@ func TestJSONSchemaFeaturesSurvive(t *testing.T) {
 		`"properties":{"a":{"oneOf":[{"type":"string"},{"type":"null"}]}},` +
 		`"$defs":{"x":{"type":"integer"}}}`)
 
-	cfg := geminiRequest(askFor(&ai.Format{
+	cfg := mustGeminiRequest(t, askFor(&ai.Format{
 		Type:   ai.FormatJSONSchema,
 		Schema: schema,
 	})).GenerationConfig
@@ -117,7 +117,7 @@ func TestNativeSchemaFieldStillWorks(t *testing.T) {
 // TestGenerationConfigStaysAbsent checks a request that asks for nothing still
 // sends no generationConfig at all, as it did before the field existed.
 func TestGenerationConfigStaysAbsent(t *testing.T) {
-	if gr := geminiRequest(askFor(nil)); gr.GenerationConfig != nil {
+	if gr := mustGeminiRequest(t, askFor(nil)); gr.GenerationConfig != nil {
 		t.Errorf("generationConfig = %+v, want nil", gr.GenerationConfig)
 	}
 }

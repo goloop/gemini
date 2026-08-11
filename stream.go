@@ -22,7 +22,12 @@ func (c *Client) Stream(
 			yield(ai.Chunk{}, err)
 			return
 		}
-		body, err := json.Marshal(geminiRequest(req))
+		greq, err := geminiRequest(req)
+		if err != nil {
+			yield(ai.Chunk{}, err)
+			return
+		}
+		body, err := json.Marshal(greq)
 		if err != nil {
 			yield(ai.Chunk{}, err)
 			return
@@ -37,6 +42,12 @@ func (c *Client) Stream(
 
 		var usage *ai.Usage
 		seen := map[string]int{}
+
+		// searches is the largest count any event reported, and sourced is how
+		// many sources have already been passed on. This provider repeats the
+		// whole metadata block as it grows, so without the second counter the
+		// same source would be reported on every event that carries it.
+		var searches, sourced int
 		for data, err := range ai.SSEEvents(resp.Body) {
 			if err != nil {
 				yield(ai.Chunk{}, err)
@@ -59,6 +70,25 @@ func (c *Client) Stream(
 			if len(gr.Candidates) == 0 {
 				continue
 			}
+
+			if gm := gr.Candidates[0].GroundingMetadata; gm != nil {
+				if n := hostedCalls(gm)[ai.HostedWebSearch]; n > searches {
+					searches = n
+				}
+				cs := streamCitations(gm, sourced)
+				if n := len(gm.GroundingChunks); n > sourced {
+					sourced = n
+				}
+				if len(cs) > 0 {
+					if !yield(ai.Chunk{
+						Citations: cs,
+						Raw:       json.RawMessage(data),
+					}, nil) {
+						return
+					}
+				}
+			}
+
 			for _, p := range gr.Candidates[0].Content.Parts {
 				var chunk ai.Chunk
 				switch {
@@ -79,8 +109,33 @@ func (c *Client) Stream(
 				}
 			}
 		}
-		yield(ai.Chunk{Done: true, Usage: usage}, nil)
+		reports, err := req.HostedReports(
+			map[ai.HostedKind]int{ai.HostedWebSearch: searches})
+		if err != nil {
+			yield(ai.Chunk{}, err)
+			return
+		}
+		yield(ai.Chunk{Done: true, Usage: usage, Hosted: reports}, nil)
 	}
+}
+
+// streamCitations returns the sources this provider has found beyond the
+// first skip of them.
+//
+// They come without a byte range, unlike the ones [Client.Generate] returns.
+// The provider measures a range against the finished answer, and a stream has
+// no finished answer to measure against while it is still arriving; a range
+// that looks like an offset into the chunk it rides on would point at the
+// wrong words. A caller that needs the ranges asks for the whole answer.
+func streamCitations(gm *GroundingMetadata, skip int) []ai.Citation {
+	var out []ai.Citation
+	for _, c := range gm.GroundingChunks[min(skip, len(gm.GroundingChunks)):] {
+		if c.Web == nil {
+			continue
+		}
+		out = append(out, ai.Citation{URL: c.Web.URI, Title: c.Web.Title})
+	}
+	return out
 }
 
 // StreamGenerateContent sends a native streaming request and yields each
