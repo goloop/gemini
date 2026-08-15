@@ -38,6 +38,8 @@ func (c *Client) Capabilities() ai.Capabilities {
 			JSONSchema: ai.FormatNative,
 			Strict:     ai.FormatNative,
 		},
+		// GenerateImage draws through the Imagen predict endpoint.
+		Images: true,
 		Hosted: map[ai.HostedKind]ai.HostedCapability{
 			ai.HostedWebSearch: {
 				// Grounding takes no settings at all: the provider decides how

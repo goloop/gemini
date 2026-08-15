@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-15
+
+Minor release: image generation with Imagen. Additive.
+
+### Added
+- `GenerateImage` generates images through the Imagen predict endpoint, in the
+  same shape as the other goloop image drivers: `ImageData.Bytes` decodes the
+  inline result, and the request, response and error names match. Until now the
+  driver did text and embeddings only.
+- Imagen works in aspect ratios, not pixels, so `ImageRequest` offers both:
+  `Size` ("WxH") is mapped to the nearest supported ratio for cross-provider
+  code, and `AspectRatio` sets Imagen's native knob directly; `AspectRatio`
+  wins when both are set. Google does not honor exact pixels, so a size snaps to
+  the nearest ratio rather than being rejected.
+- `ModelImagen4` and `ModelImagen3` model constants (verify against Google's
+  current catalog before pinning - Google versions and retires these by date).
+- `Capabilities.Images` is true: a UI can ask `ai.SupportsImages(client)` to
+  decide whether to offer image generation.
+
 ## [1.1.1] - 2026-08-11
 
 Patch release.

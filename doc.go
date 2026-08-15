@@ -4,6 +4,7 @@
 // The Client implements ai.Client, so Generate and Stream work the same as
 // with any other goloop AI provider. On top of that it exposes Gemini's native
 // endpoints and their full options: generateContent, streamGenerateContent,
+// image generation with Imagen (GenerateImage through the predict endpoint),
 // embeddings, token counting and model listing.
 //
 //	c := gemini.New(os.Getenv("GEMINI_API_KEY"))

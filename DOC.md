@@ -17,6 +17,7 @@ Ukrainian version: **[DOC.UK.md](DOC.UK.md)**.
 - [Native generateContent](#native-generatecontent)
 - [Tools and tool results](#tools-and-tool-results)
 - [Images and system prompts](#images-and-system-prompts)
+- [Image generation](#image-generation)
 - [Embeddings](#embeddings)
 - [Token counting](#token-counting)
 - [Models](#models)
@@ -186,6 +187,33 @@ ai.Message{Role: ai.RoleUser, Parts: []ai.Part{
 	ai.Image{MIME: "image/png", Data: pngBytes},
 }}
 ```
+
+## Image generation
+
+Imagen generates images through the predict endpoint. Read each image with
+`Bytes`, exactly as with the other goloop image drivers:
+
+```go
+resp, err := c.GenerateImage(ctx, &gemini.ImageRequest{
+	Model:  gemini.ModelImagen4,
+	Prompt: "a watercolor cat",
+	N:      1,
+	Size:   "1536x1024", // mapped to the nearest aspect ratio
+})
+png, err := resp.Data[0].Bytes()
+```
+
+Imagen works in aspect ratios, not exact pixels, so `Size` is mapped to the
+nearest of `1:1`, `3:4`, `4:3`, `9:16`, `16:9` - Google does not honor exact
+pixels, and refusing a reasonable `1024x1024` would be hostile. Set
+`AspectRatio` to pick one of those directly; when both are set, `AspectRatio`
+wins. A nil or promptless request is refused before the network
+(`ErrNoImageRequest`, `ErrNoImagePrompt`).
+
+`ImageResponse.Usage` is present for uniformity with the other drivers but is
+always nil here: the predict endpoint reports no token usage. `Bytes`,
+`ErrNoImageBytes` and `ImageUsage` carry the same names as in the other image
+drivers, so switching provider does not change how the result is read.
 
 ## Embeddings
 
