@@ -273,7 +273,8 @@ func TestStreamReportsSourcesOnceAndCountsSearches(t *testing.T) {
 data: {"candidates":[{"content":{"parts":[{"text":" тепло."}]},` +
 		`"groundingMetadata":{"webSearchQueries":["a","b"],` +
 		`"groundingChunks":[{"web":{"uri":"https://example.org/a","title":"A"}},` +
-		`{"web":{"uri":"https://example.org/b","title":"B"}}]}}],` +
+		`{"web":{"uri":"https://example.org/b","title":"B"}}]},` +
+		`"finishReason":"STOP"}],` +
 		`"usageMetadata":{"promptTokenCount":1,"candidatesTokenCount":2}}
 
 `

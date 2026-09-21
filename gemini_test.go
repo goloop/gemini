@@ -146,7 +146,7 @@ func TestStream(t *testing.T) {
 func TestStreamToolCall(t *testing.T) {
 	events := []string{
 		`data: {"candidates":[{"content":{"parts":[{"functionCall":` +
-			`{"name":"lookup","args":{"q":42}}}]}}]}`, ``,
+			`{"name":"lookup","args":{"q":42}}}]},"finishReason":"STOP"}]}`, ``,
 	}
 	c, done := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		for _, line := range events {

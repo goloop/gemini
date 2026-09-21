@@ -78,6 +78,11 @@ for chunk, err := range c.Stream(ctx, req) {
 }
 ```
 
+Якщо стрім обірвано до того, як кандидат отримає `finishReason`, `Stream` віддає
+`io.ErrUnexpectedEOF`, а не повідомляє обрізану чи порожню відповідь як
+завершену. Подія, що не є коректним JSON, так само завершує стрім помилкою;
+`StreamGenerateContent` повідомляє про неї так само.
+
 ## Структурований вивід
 
 `ai.Request.Format` лягає на власний `responseMimeType` провайдера, тож запит на JSON

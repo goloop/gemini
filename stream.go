@@ -48,14 +48,21 @@ func (c *Client) Stream(
 		// whole metadata block as it grows, so without the second counter the
 		// same source would be reported on every event that carries it.
 		var searches, sourced int
+
+		// The stream ends properly with a candidate that carries a
+		// finishReason; anything else is a stream that was cut off.
+		sawFinish := false
 		for data, err := range ai.SSEEvents(resp.Body) {
 			if err != nil {
 				yield(ai.Chunk{}, err)
 				return
 			}
 			var gr GenerateResponse
-			if json.Unmarshal([]byte(data), &gr) != nil {
-				continue
+			if e := json.Unmarshal([]byte(data), &gr); e != nil {
+				// A broken event is a broken stream: skipping it would
+				// quietly drop part of the answer.
+				yield(ai.Chunk{}, e)
+				return
 			}
 			if gr.UsageMetadata != nil {
 				usage = &ai.Usage{
@@ -69,6 +76,9 @@ func (c *Client) Stream(
 			}
 			if len(gr.Candidates) == 0 {
 				continue
+			}
+			if gr.Candidates[0].FinishReason != "" {
+				sawFinish = true
 			}
 
 			if gm := gr.Candidates[0].GroundingMetadata; gm != nil {
@@ -109,6 +119,15 @@ func (c *Client) Stream(
 				}
 			}
 		}
+
+		// A stream that ended without a finishReason was truncated: the text
+		// may be incomplete and the usage missing, so report it rather than
+		// presenting a cut-off result, or an empty one, as complete.
+		if !sawFinish {
+			yield(ai.Chunk{}, io.ErrUnexpectedEOF)
+			return
+		}
+
 		reports, err := req.HostedReports(
 			map[ai.HostedKind]int{ai.HostedWebSearch: searches})
 		if err != nil {
@@ -164,8 +183,9 @@ func (c *Client) StreamGenerateContent(
 				return
 			}
 			var gr GenerateResponse
-			if json.Unmarshal([]byte(data), &gr) != nil {
-				continue
+			if e := json.Unmarshal([]byte(data), &gr); e != nil {
+				yield(nil, e)
+				return
 			}
 			if !yield(&gr, nil) {
 				return

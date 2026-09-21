@@ -79,6 +79,11 @@ for chunk, err := range c.Stream(ctx, req) {
 }
 ```
 
+If the stream is cut off before a candidate carries a `finishReason`, `Stream`
+yields `io.ErrUnexpectedEOF` rather than reporting a truncated, or empty,
+answer as complete. An event that is not valid JSON ends the stream with an
+error too; `StreamGenerateContent` reports it the same way.
+
 ## Structured output
 
 `ai.Request.Format` maps onto the provider's own `responseMimeType`, so a request for JSON
