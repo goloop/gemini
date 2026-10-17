@@ -1,6 +1,9 @@
 package gemini
 
-import "context"
+import (
+	"context"
+	"github.com/goloop/ai"
+)
 
 // CountTokens reports how many tokens the given content would consume for a
 // model, without generating a response.
@@ -9,6 +12,9 @@ func (c *Client) CountTokens(
 	model string,
 	req *GenerateRequest,
 ) (int, error) {
+	if req == nil {
+		return 0, ai.ErrNoRequest
+	}
 	body := struct {
 		Contents          []Content   `json:"contents,omitempty"`
 		SystemInstruction *Content    `json:"systemInstruction,omitempty"`

@@ -1,4 +1,4 @@
-[![deps.dev](https://img.shields.io/badge/deps.dev-insights-4c8dbc)](https://deps.dev/go/github.com%2Fgoloop%2Fgemini) [![License](https://img.shields.io/badge/license-MIT-brightgreen)](https://github.com/goloop/gemini/blob/master/LICENSE) [![License](https://img.shields.io/badge/godoc-YES-green)](https://pkg.go.dev/github.com/goloop/gemini) [![Stay with Ukraine](https://img.shields.io/static/v1?label=Stay%20with&message=Ukraine%20♥&color=ffD700&labelColor=0057B8&style=flat)](https://u24.gov.ua/)
+[![deps.dev](https://img.shields.io/badge/deps.dev-insights-4c8dbc)](https://deps.dev/go/github.com%2Fgoloop%2Fgemini) [![License](https://img.shields.io/badge/license-MIT-brightgreen)](https://github.com/goloop/gemini/blob/v1/LICENSE) [![License](https://img.shields.io/badge/godoc-YES-green)](https://pkg.go.dev/github.com/goloop/gemini) [![Stay with Ukraine](https://img.shields.io/static/v1?label=Stay%20with&message=Ukraine%20♥&color=ffD700&labelColor=0057B8&style=flat)](https://u24.gov.ua/)
 
 
 # gemini
@@ -111,3 +111,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 MIT - see [LICENSE](LICENSE).
+
+## Release v1.2.2
+
+Reject nil token-count requests before accessing their fields.
