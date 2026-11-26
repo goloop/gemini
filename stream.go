@@ -106,9 +106,9 @@ func (c *Client) Stream(
 					chunk.ToolCall = &ai.ToolUse{
 						ID:    toolCallID(p.FunctionCall.Name, seen),
 						Name:  p.FunctionCall.Name,
-						Input: p.FunctionCall.Args,
+						Input: p.FunctionCall.input(),
 					}
-				case p.Text != "":
+				case !p.Thought && p.Text != "":
 					chunk.Text = p.Text
 				default:
 					continue
@@ -201,13 +201,16 @@ func (c *Client) openStream(
 	body []byte,
 ) (*http.Response, error) {
 	url := c.opts.BaseURL + "/models/" + model + ":streamGenerateContent?alt=sse"
-	resp, err := c.opts.Do(ctx, http.MethodPost, url, body, c.headers())
+	resp, err := c.opts.DoStream(ctx, http.MethodPost, url, body, c.headers())
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		data, _ := io.ReadAll(resp.Body)
+		data, readErr := ai.ReadResponse(resp.Body)
 		resp.Body.Close()
+		if readErr != nil {
+			return nil, readErr
+		}
 		return nil, parseError(resp.StatusCode, data)
 	}
 	return resp, nil

@@ -325,9 +325,9 @@ func geminiToResponse(model string, gr *GenerateResponse, raw []byte) *ai.Respon
 				resp.Parts = append(resp.Parts, ai.ToolUse{
 					ID:    toolCallID(p.FunctionCall.Name, seen),
 					Name:  p.FunctionCall.Name,
-					Input: p.FunctionCall.Args,
+					Input: p.FunctionCall.input(),
 				})
-			case p.Text != "":
+			case !p.Thought && p.Text != "":
 				resp.Parts = append(resp.Parts, ai.Text{
 					Text: p.Text,
 					Citations: citationsFor(cand.GroundingMetadata,

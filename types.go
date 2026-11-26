@@ -17,6 +17,8 @@ type Content struct {
 // plain text, InlineData for embedded bytes, FileData for a referenced file,
 // FunctionCall for a model tool call, or FunctionResponse for a tool result.
 type Part struct {
+	Thought          bool              `json:"thought,omitempty"`
+	ThoughtSignature string            `json:"thoughtSignature,omitempty"`
 	Text             string            `json:"text,omitempty"`
 	InlineData       *Blob             `json:"inlineData,omitempty"`
 	FileData         *FileData         `json:"fileData,omitempty"`
@@ -198,4 +200,11 @@ func (r *GenerateResponse) Text() string {
 		b.WriteString(p.Text)
 	}
 	return b.String()
+}
+
+func (call FunctionCall) input() json.RawMessage {
+	if len(call.Args) == 0 || string(call.Args) == "null" {
+		return json.RawMessage("{}")
+	}
+	return call.Args
 }
