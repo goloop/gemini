@@ -166,7 +166,7 @@ func geminiContents(req *ai.Request) []Content {
 					}})
 				}
 			case ai.ToolUse:
-				parts = append(parts, Part{FunctionCall: &FunctionCall{
+				parts = append(parts, Part{ThoughtSignature: v.ProviderState["gemini"], FunctionCall: &FunctionCall{
 					Name: v.Name, Args: v.Input,
 				}})
 			case ai.ToolResult:
@@ -306,6 +306,14 @@ func formatMode(f *ai.Format) ai.FormatMode {
 	return ai.FormatNative
 }
 
+func toolUse(p Part, seen map[string]int) ai.ToolUse {
+	call := ai.ToolUse{ID: toolCallID(p.FunctionCall.Name, seen), Name: p.FunctionCall.Name, Input: p.FunctionCall.input()}
+	if p.ThoughtSignature != "" {
+		call.ProviderState = map[string]string{"gemini": p.ThoughtSignature}
+	}
+	return call
+}
+
 // geminiToResponse maps a native response onto an ai.Response. Function calls
 // use their name as the tool-call ID, since Gemini keys results by name.
 func geminiToResponse(model string, gr *GenerateResponse, raw []byte) *ai.Response {
@@ -322,11 +330,7 @@ func geminiToResponse(model string, gr *GenerateResponse, raw []byte) *ai.Respon
 		for _, p := range cand.Content.Parts {
 			switch {
 			case p.FunctionCall != nil:
-				resp.Parts = append(resp.Parts, ai.ToolUse{
-					ID:    toolCallID(p.FunctionCall.Name, seen),
-					Name:  p.FunctionCall.Name,
-					Input: p.FunctionCall.input(),
-				})
+				resp.Parts = append(resp.Parts, toolUse(p, seen))
 			case !p.Thought && p.Text != "":
 				resp.Parts = append(resp.Parts, ai.Text{
 					Text: p.Text,

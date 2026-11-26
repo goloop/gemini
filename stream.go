@@ -103,11 +103,8 @@ func (c *Client) Stream(
 				var chunk ai.Chunk
 				switch {
 				case p.FunctionCall != nil:
-					chunk.ToolCall = &ai.ToolUse{
-						ID:    toolCallID(p.FunctionCall.Name, seen),
-						Name:  p.FunctionCall.Name,
-						Input: p.FunctionCall.input(),
-					}
+					call := toolUse(p, seen)
+					chunk.ToolCall = &call
 				case !p.Thought && p.Text != "":
 					chunk.Text = p.Text
 				default:
