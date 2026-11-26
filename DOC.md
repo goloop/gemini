@@ -343,3 +343,7 @@ normal error rather than a silent empty response.
 ## Release v1.2.2
 
 Reject nil token-count requests before accessing their fields.
+
+## Request behavior
+
+Keep signed tool calls and their matching results together in conversation history, including multiple calls with the same function name.

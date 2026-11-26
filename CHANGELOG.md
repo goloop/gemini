@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Keep long responses streaming and check completion data. Carry signed function calls through shared conversation history.
 
+Verify signed calls with matching tool results.
+
 ## [1.2.2] - 2026-10-18
 
 Reject nil token-count requests before accessing their fields.

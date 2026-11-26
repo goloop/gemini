@@ -324,3 +324,7 @@ if errors.As(err, &apiErr) && apiErr.Status == http.StatusTooManyRequests {
 ## Реліз v1.2.2
 
 CountTokens повертає ai.ErrNoRequest для nil-запиту.
+
+## Поведінка запиту
+
+Зберігайте підписані виклики інструментів і відповідні результати в історії, зокрема кілька викликів однієї функції.
